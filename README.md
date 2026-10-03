@@ -104,19 +104,6 @@ Suggested demo request:
 
 > I'm travelling from Hyderabad to Dubai next Friday. My flight is AI 542 and I'm travelling with my parents. We have 3 large suitcases and 2 cabin bags. We need an airport pickup.
 
-## Submission checklist
-
-- [x] AI is central to the workflow.
-- [x] Open-source project license included.
-- [x] Gemma 4 explicitly identified.
-- [x] Structured model output is consumed by application logic.
-- [x] Natural-language journey planning demonstrated.
-- [x] Flight/train/metro/bus journey paths supported.
-- [x] Pickup/drop and travel date are normalized.
-- [x] Passenger and luggage requirements are editable.
-- [x] Vehicle options are matched to capacity.
-- [x] End-to-end mock booking flow included.
-
 
 
 ## License
