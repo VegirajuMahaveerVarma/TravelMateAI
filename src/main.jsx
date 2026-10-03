@@ -16,6 +16,10 @@ function vehicleFor(intent){
   return{type:"XL Van",icon:"🚐",fare:999,capacity:"7 passengers · 8 bags"};
 }
 function vehicleIcon(type){return ({Bike:"🏍️",Auto:"🛺",Sedan:"🚘",SUV:"🚙","XL Van":"🚐"}[type]||"🚘");}
+function displayDate(value){
+  if(!value)return "Today";
+  return String(value).replace(/\b(next|this)\s+([a-z])/i,(_,prefix,letter)=>prefix+" "+letter.toUpperCase()+String(value).slice(String(value).toLowerCase().indexOf(letter)+1));
+}
 
 function App(){
   const [message,setMessage]=useState("");
@@ -160,7 +164,7 @@ function App(){
       <header className="topbar"><div className="crumb">Workspace <span>/</span> <b>Home</b></div><div className="top-actions"><div className="search">⌕ <span>Search anything...</span><kbd>⌘ K</kbd></div><span className="bell">♧</span><div className="avatar">A</div></div></header>
       <main className="content" id="home">
         <section className="welcome-grid">
-          <div className="welcome-card"><div className="date-label">SATURDAY, 03 OCTOBER 2026</div><h1>Good afternoon, traveller ✦</h1><p>Where are you going next? We'll help with every step.</p><div className="journey-bar"><div><small>FROM</small><strong>{j?.origin||"Hyderabad"}</strong></div><div className="swap">⇄</div><div><small>TO</small><strong>{j?.destination||"Your destination"}</strong></div><div><small>TRAVEL DATE</small><strong>{j?.travel_date||"Today"}</strong></div><button onClick={()=>jump("planner")}>Plan journey →</button></div></div>
+          <div className="welcome-card"><div className="date-label">SATURDAY, 03 OCTOBER 2026</div><h1>Good afternoon, traveller ✦</h1><p>Where are you going next? We'll help with every step.</p><div className="journey-bar"><div><small>FROM / PICKUP</small><strong>{j?.pickup||j?.origin||"Your pickup"}</strong></div><div className="swap">⇄</div><div><small>TO / DROP</small><strong>{j?.destination||"Your destination"}</strong></div><div><small>TRAVEL DATE</small><strong>{displayDate(j?.travel_date)}</strong></div><button onClick={()=>jump("planner")}>Plan journey →</button></div></div>
           <div className="readiness card"><div className="card-title"><b>Journey readiness</b><strong>{progress}<small>%</small></strong></div><div className="progress"><i style={{width:progress+"%"}}/></div><div className="checks"><span>✓ Journey details</span><span>✓ Arrival pickup</span><span>✓ Vehicle matching</span><span>✓ Local transport</span><span>✓ AI support</span><span>✓ Travel services</span></div><small className="note">A planning estimate, not a safety guarantee.</small></div>
         </section>
         <section className="section-head" id="trips"><div><h2>Your trips</h2><p>One place for flight, train, metro, bus, arrival and ride planning.</p></div><button onClick={resetPlanner}>Plan another →</button></section>
