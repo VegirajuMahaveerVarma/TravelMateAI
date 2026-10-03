@@ -37,3 +37,25 @@
 .vehicle-option strong{font-size:12px}
 @media(max-width:1000px){.vehicle-option-grid{grid-template-columns:repeat(2,1fr)}.editable-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.vehicle-option-grid{grid-template-columns:1fr}.editable-stats{grid-template-columns:1fr 1fr}.pickup-stat{grid-column:1/-1}}
+
+/* Contributors */
+.contributors-section{margin-top:42px;padding:30px;border:1px solid #dfe7f1;border-radius:20px;background:linear-gradient(135deg,#f8fbff 0%,#ffffff 55%,#f3f8ff 100%);position:relative;overflow:hidden}
+.contributors-section:after{content:"";position:absolute;width:280px;height:280px;border:55px solid #3972df0a;border-radius:50%;right:-150px;top:-150px;pointer-events:none}
+.contributors-header{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px}
+.contributors-eyebrow{font:800 9px 'DM Mono';letter-spacing:1.5px;color:#3972df}
+.contributors-header h2{margin:8px 0 5px;font-size:26px;letter-spacing:-1px;color:#203451}
+.contributors-header h2 em{font-style:normal;color:#3972df}
+.contributors-header p{margin:0;max-width:620px;color:#7e8da4;font-size:11px;line-height:1.7}
+.team-badge{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dfe7f1;border-radius:12px;padding:10px 13px;box-shadow:0 8px 22px #274d7d0c;white-space:nowrap}
+.team-badge>span{width:34px;height:34px;border-radius:10px;background:#edf3ff;color:#3972df;display:grid;place-items:center;font-size:17px}
+.team-badge small{display:block;color:#9aa8b9;font:800 8px 'DM Mono';letter-spacing:1px}
+.team-badge b{display:block;color:#263955;font-size:12px;margin-top:2px}
+.contributors-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.contributor-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e1e8f1;border-radius:14px;padding:14px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.contributor-card:hover{transform:translateY(-3px);border-color:#c9daf7;box-shadow:0 12px 26px #274d7d12}
+.contributor-avatar{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:linear-gradient(135deg,#3972df,#76a9f2);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:.3px}
+.contributor-card span{font:800 7px 'DM Mono';letter-spacing:1px;color:#9aa8b9}
+.contributor-card h3{margin:4px 0 2px;color:#263955;font-size:12px}
+.contributor-card p{margin:0;color:#91a0b2;font-size:9px}
+@media(max-width:850px){.contributors-grid{grid-template-columns:repeat(2,1fr)}.contributors-header{align-items:flex-start;flex-direction:column}}
+@media(max-width:600px){.contributors-section{padding:22px 16px}.contributors-grid{grid-template-columns:1fr}.team-badge{width:100%}}
