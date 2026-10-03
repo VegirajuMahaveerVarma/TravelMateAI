@@ -22,6 +22,7 @@ function App(){
   const [error,setError]=useState("");
   const [service,setService]=useState({type:"hotels",data:null,loading:false});
   const [support,setSupport]=useState("");
+  const [started,setStarted]=useState(false);
   const vehicle=useMemo(()=>plan?vehicleFor(plan.journey||plan.intent):null,[plan]);
 
   async function planRide(){
@@ -30,7 +31,7 @@ function App(){
     try{
       const r=await fetch("/api/journey/plan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:message.trim()})});
       const data=await r.json(); if(!r.ok)throw new Error(data.error||"Unable to plan this journey.");
-      setPlan(data);
+      setPlan(data); setStarted(true);
     }catch(e){setError(e.message||"Something went wrong.");}finally{setLoading(false);}
   }
   function jump(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"});}
@@ -54,6 +55,39 @@ function App(){
     const r=await fetch("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:plan.journey.mode,reference:plan.journey.reference,destination:plan.journey.destination,vehicle:vehicle.type,fare:vehicle.fare,pickup_window:plan.pickup_window})});
     if(r.ok)setBooked(true); else setError("Could not confirm the booking.");
   }
+  if(!started) return <div className="travel-intro">
+    <div className="intro-glow"/>
+    <header className="intro-nav">
+      <div className="side-brand"><div className="side-logo">✦</div><div><b>travelmate<span>AI</span></b><small>YOUR JOURNEY, CONNECTED</small></div></div>
+      <div className="intro-model">✦ POWERED BY GEMMA 4</div>
+    </header>
+    <main className="intro-main">
+      <div className="intro-eyebrow">YOUR AI TRAVEL COMPANION</div>
+      <h1>Tell us about your<br/><em>journey.</em></h1>
+      <p className="intro-sub">Flights, trains, metro, buses, hotels, pickups and more. Just describe your trip naturally — TravelMateAI will figure out what you need.</p>
+      <div className="intro-box">
+        <div className="intro-box-top"><span>✦</span><b>Describe your travel plans</b><small>AI understands natural language</small></div>
+        <textarea value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")planRide();}} placeholder="Example: I'm travelling from Hyderabad to Mumbai next Friday. My flight is AI 542 and I'm travelling with my parents. We have 3 large suitcases and 2 cabin bags. We need an airport pickup, a hotel near Andheri and local transport..." rows="7"/>
+        <div className="intro-examples">
+          <button onClick={()=>setMessage("I'm travelling from Hyderabad to Mumbai next Friday. My flight is AI 542 and I'm travelling with my parents. We have 3 large suitcases and 2 cabin bags. We need an airport pickup and a hotel near Andheri.")}>✈ Full trip</button>
+          <button onClick={()=>setMessage("Track train 12723 arriving at Secunderabad tomorrow. We are 3 people with 2 bags and need a cab to Banjara Hills.")}>🚆 Train journey</button>
+          <button onClick={()=>setMessage("Take the Hyderabad metro from Ameerpet to Hitech City for 2 passengers, then help me find a cab to my destination.")}>🚇 Metro journey</button>
+        </div>
+        <button className="intro-btn" disabled={loading||!message.trim()} onClick={planRide}>
+          {loading?<><span className="intro-spinner"/> Understanding your journey…</>:<>Build my journey <span>→</span></>}
+        </button>
+        {error&&<div className="error-box">{error}</div>}
+        <div className="intro-hint">Press <b>Ctrl + Enter</b> to continue</div>
+      </div>
+      <div className="intro-capabilities">
+        <div><span>01</span><b>Understand</b><small>Gemma extracts your travel intent</small></div>
+        <div><span>02</span><b>Connect</b><small>Matches transport, stays and services</small></div>
+        <div><span>03</span><b>Plan</b><small>Creates one journey workspace</small></div>
+      </div>
+    </main>
+    <footer className="intro-footer"><span>TravelMateAI</span><span>One prompt. One connected journey.</span></footer>
+  </div>;
+
   const progress=plan?100:72, j=plan?.journey;
   return <div className="dashboard">
     <aside className="sidebar">
