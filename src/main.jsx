@@ -2,160 +2,128 @@ import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const examples = [
+const examples=[
   "Track flight AI 1234 arriving at Hyderabad today. We are 3 people with 3 large suitcases and 2 cabin bags going to Banjara Hills.",
-  "My flight 6E 6421 is arriving at HYD. We are 2 passengers with 2 suitcases and 2 backpacks. Drop us at Hitech City.",
-  "Track UK 878 to Hyderabad. Five passengers, 6 large bags, destination Jubilee Hills."
+  "My flight 6E 6421 is arriving at HYD. We are 2 passengers with 2 suitcases and 2 backpacks. Drop us at Hitech City."
 ];
 
-function recommendVehicle(intent) {
-  const seats = Number(intent.passengers || 1);
-  const bags = Number(intent.large_bags || 0) + Number(intent.small_bags || 0);
-  if (seats <= 3 && bags <= 3) return { type: "Sedan", icon: "🚘", capacity: "Up to 3 passengers • 3 bags", fare: "₹549" };
-  if (seats <= 5 && bags <= 5) return { type: "SUV", icon: "🚙", capacity: "Up to 5 passengers • 5 bags", fare: "₹749" };
-  return { type: "XL Van", icon: "🚐", capacity: "Up to 7 passengers • 8 bags", fare: "₹999" };
+function vehicleFor(intent){
+  const seats=Number(intent.passengers||1), bags=Number(intent.large_bags||0)+Number(intent.small_bags||0);
+  if(seats<=3&&bags<=3)return{type:"Sedan",icon:"🚘",fare:"₹549",capacity:"3 passengers · 3 bags"};
+  if(seats<=5&&bags<=5)return{type:"SUV",icon:"🚙",fare:"₹749",capacity:"5 passengers · 5 bags"};
+  return{type:"XL Van",icon:"🚐",fare:"₹999",capacity:"7 passengers · 8 bags"};
 }
 
-function App() {
-  const [message, setMessage] = useState("");
-  const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [booked, setBooked] = useState(false);
-  const [error, setError] = useState("");
-  const vehicle = useMemo(() => plan ? recommendVehicle(plan.intent) : null, [plan]);
+function App(){
+  const [message,setMessage]=useState("");
+  const [plan,setPlan]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [booked,setBooked]=useState(false);
+  const [error,setError]=useState("");
+  const vehicle=useMemo(()=>plan?vehicleFor(plan.intent):null,[plan]);
 
-  async function trackAndPlan() {
-    if (!message.trim()) return;
-    setLoading(true); setBooked(false); setError("");
-    try {
-      const response = await fetch("/api/track-flight", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message.trim() })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not plan the airport transfer.");
+  async function planRide(){
+    if(!message.trim())return;
+    setLoading(true);setError("");setBooked(false);
+    try{
+      const r=await fetch("/api/track-flight",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:message.trim()})});
+      const data=await r.json();
+      if(!r.ok)throw new Error(data.error||"Unable to plan this journey.");
       setPlan(data);
-    } catch (err) {
-      setError(err.message || "Something went wrong.");
-    } finally { setLoading(false); }
+    }catch(e){setError(e.message||"Something went wrong.");}
+    finally{setLoading(false);}
   }
 
-  function useExample(example) {
-    setMessage(example); setPlan(null); setBooked(false); setError("");
-  }
+  function jump(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"});}
+  const progress=plan?100:72;
 
-  return (
-    <div className="app-shell">
-      <nav className="nav">
-        <div className="brand">
-          <div className="brand-mark">✦</div>
-          <div><strong>TravelMate<span>AI</span></strong><small>Touchdown to destination</small></div>
-        </div>
-        <div className="model-pill"><span className="pulse" /> Powered by Gemma 4</div>
-      </nav>
+  return <div className="dashboard">
+    <aside className="sidebar">
+      <div className="side-brand"><div className="side-logo">✦</div><div><b>travelmate<span>AI</span></b><small>YOUR JOURNEY, CONNECTED</small></div></div>
+      <div className="side-label">WORKSPACE</div>
+      {[
+        ["⌂","Home","home"],
+        ["▣","My Trips","trips"],
+        ["＋","Plan Journey","planner"],
+        ["↗","Transport","planner"],
+        ["⌂","Hotels","trips"],
+        ["♟","Food","trips"],
+        ["✦","Live Journey","tracking"],
+        ["✳","AI Support","support"],
+        ["♧","Notifications","home"],
+        ["▤","Documents","home"],
+        ["＋","Emergency","support"]
+      ].map(([icon,label,target],i)=><button className={"side-item "+(i===0?"active":"")} key={label} onClick={()=>jump(target)}><span>{icon}</span>{label}{label==="Notifications"&&<em>3</em>}</button>)}
+      <div className="side-bottom"><div className="status-dot"/> AI travel assistant online</div>
+    </aside>
 
-      <main>
-        <section className="hero">
-          <div className="hero-copy">
-            <div className="eyebrow">AI FLIGHT-TO-RIDE ASSISTANT</div>
-            <h1>Track the flight.<br /><em>Time the ride.</em></h1>
-            <p>Give TravelMate your flight and travel details. Gemma 4 extracts the trip intent, the flight tracker supplies the arrival status, and the app schedules a cab pickup around touchdown.</p>
-            <div className="trust-row"><span>✦ Natural language</span><span>✈ Flight tracking</span><span>↗ Arrival-based ride</span></div>
+    <div className="main-area">
+      <header className="topbar">
+        <div className="crumb">Workspace <span>/</span> <b>Home</b></div>
+        <div className="top-actions"><div className="search">⌕ <span>Search anything...</span><kbd>⌘ K</kbd></div><span className="bell">♧</span><div className="avatar">A</div></div>
+      </header>
+
+      <main className="content" id="home">
+        <section className="welcome-grid">
+          <div className="welcome-card">
+            <div className="date-label">SATURDAY, 03 OCTOBER 2026</div>
+            <h1>Good afternoon, traveller ✦</h1>
+            <p>Where are you going next? We'll help with every step.</p>
+            <div className="journey-bar">
+              <div><small>FROM</small><strong>Hyderabad</strong></div><div className="swap">⇄</div><div><small>TO</small><strong>{plan?.intent?.destination||"Your destination"}</strong></div>
+              <div><small>TRAVEL DATE</small><strong>Today</strong></div>
+              <button onClick={()=>jump("planner")}>Plan journey →</button>
+            </div>
           </div>
-          <div className="hero-card">
-            <div className="card-label">HOW IT WORKS</div>
-            <div className="flow">
-              <div><b>01</b><span>Traveller gives flight details</span></div><i>↓</i>
-              <div><b>02</b><span>Gemma extracts trip intent</span></div><i>↓</i>
-              <div><b>03</b><span>Arrival status is tracked</span></div><i>↓</i>
-              <div><b>04</b><span>Cab pickup is timed</span></div>
+          <div className="readiness card">
+            <div className="card-title"><b>Journey readiness</b><strong>{progress}<small>%</small></strong></div>
+            <div className="progress"><i style={{width:progress+"%"}}/></div>
+            <div className="checks"><span>✓ Flight details {plan?"ready":"saved"}</span><span>✓ Arrival pickup</span><span>✓ Vehicle matching</span><span>◌ Local transport</span><span>✓ AI support</span><span>◌ Hotel & food</span></div>
+            <small className="note">A planning estimate, not a safety guarantee.</small>
+          </div>
+        </section>
+
+        <section className="section-head" id="trips"><div><h2>Your next journey</h2><p>One place for your flight, arrival and ride.</p></div><button>All trips →</button></section>
+        <section className="trip-grid">
+          <div className="trip-card card">
+            <div className="trip-top"><div className="trip-icon">✈</div><div><b>{plan?.flight?.flight_number||"HYD ARRIVAL"}</b><small>Hyderabad → {plan?.intent?.destination||"Destination"}</small></div><span>AI planned</span></div>
+            <div className="timeline"><div className="done">✓</div><div className="line"/><div className={plan?"done":"current"}>{plan?"✓":"2"}</div><div className="line"/><div className={plan?"done":"pending"}>{plan?"✓":"3"}</div><div className="line"/><div className="pending">4</div></div>
+            <div className="timeline-labels"><span>Flight<br/><small>{plan?"Tracked":"Ready"}</small></span><span>Pickup<br/><small>{plan?"Timed":"Plan"}</small></span><span>Vehicle<br/><small>{plan?"Matched":"Select"}</small></span><span>Local ride<br/><small>To arrange</small></span></div>
+            <button className="open-btn" onClick={()=>jump("planner")}>Open journey →</button>
+          </div>
+          <div className="suggestions">
+            <h2>Suggested next step <small>FOR YOUR TRIP</small></h2>
+            <div className="suggestion card" onClick={()=>jump("planner")}><div>🚕</div><section><b>Plan your airport pickup</b><small>Track arrival and match a vehicle around touchdown.</small></section><button>Explore</button></div>
+            <div className="quick"><h3>Quick access</h3><div><article onClick={()=>jump("trips")}>▤<b>Travel docs<small>3 ready</small></b></article><article onClick={()=>jump("tracking")}>♧<b>Updates<small>{plan?"Live plan":"3 updates"}</small></b></article></div></div>
+          </div>
+        </section>
+
+        <section className="planner-section" id="planner">
+          <div className="section-head"><div><h2>AI journey planner</h2><p>Describe your flight and needs naturally. Gemma turns it into an actionable ride plan.</p></div><span className="gemma-tag">✦ GEMMA 4</span></div>
+          <div className="planner-grid">
+            <div className="planner-input card">
+              <label>YOUR TRAVEL REQUEST</label>
+              <textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Example: Track AI 1234 arriving at Hyderabad. We are 3 people with 3 large bags going to Banjara Hills..." rows="6"/>
+              <div className="examples">{examples.map((x,i)=><button key={i} onClick={()=>setMessage(x)}>Example {i+1}</button>)}</div>
+              <button className="plan-btn" disabled={loading||!message.trim()} onClick={planRide}>{loading?"Understanding & tracking…":"Plan my journey →"}</button>
+              {error&&<div className="error-box">{error}</div>}
+            </div>
+            <div className="plan-result card">
+              {!plan&&!booked?<div className="empty"><div>✈</div><h3>Your live plan will appear here</h3><p>Flight → Gemma intent → arrival timing → pickup → vehicle</p></div>:
+              booked?<div className="confirmed"><div>✓</div><label>BOOKING CONFIRMED</label><h2>Airport transfer ready</h2><p>{vehicle.type} · {plan.intent.destination}</p><b>TM-DEMO-{plan.flight.flight_number.replace(/\W/g,"").slice(-4)||"RIDE"}</b><button onClick={()=>setBooked(false)}>View ride details</button></div>:
+              <div className="result"><div className="result-top"><div><label>FLIGHT TRACKING</label><h2>✈ {plan.flight.flight_number}</h2><small>{plan.flight.status} · {plan.flight.arrival_time} arrival</small></div><span>DEMO FEED</span></div>
+                <div className="stat-row"><div><small>PASSENGERS</small><b>{plan.intent.passengers}</b></div><div><small>BAGS</small><b>{Number(plan.intent.large_bags)+Number(plan.intent.small_bags)}</b></div><div><small>PICKUP</small><b>{plan.pickup_window.start}–{plan.pickup_window.end}</b></div></div>
+                <div className="route-row"><span>{plan.intent.pickup}</span><b>→</b><span>{plan.intent.destination}</span></div>
+                <div className="vehicle-row"><div><label>AI VEHICLE MATCH</label><h2>{vehicle.icon} {vehicle.type}</h2><small>{vehicle.capacity}</small></div><strong>{vehicle.fare}</strong></div>
+                <button className="plan-btn" onClick={()=>setBooked(true)}>Confirm airport pickup →</button>
+              </div>}
             </div>
           </div>
         </section>
 
-        <section className="workspace">
-          <div className="input-panel panel">
-            <div className="panel-heading">
-              <div><span className="step">01</span><div><h2>Track my flight & plan my ride</h2><p>No booking forms. Just describe your flight and destination.</p></div></div>
-              <span className="ai-badge">GEMMA 4</span>
-            </div>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Example: Track flight AI 1234 arriving at Hyderabad today. We’re 3 people with 3 large suitcases and 2 cabin bags going to Banjara Hills..." rows="6" />
-            <div className="examples"><span>Try an example</span>{examples.map((example, index) => <button key={index} onClick={() => useExample(example)}>Example {index + 1}</button>)}</div>
-            <button className="primary-btn" onClick={trackAndPlan} disabled={loading || !message.trim()}>
-              {loading ? <><span className="spinner" /> Tracking flight & planning…</> : <>Track flight & plan my ride <span>→</span></>}
-            </button>
-            {error && <div className="error-box">{error}</div>}
-          </div>
-
-          <div className="result-panel panel">
-            {!plan ? (
-              <div className="empty-state">
-                <div className="radar"><span>✈</span></div>
-                <h3>Your arrival-based ride plan will appear here</h3>
-                <p>TravelMateAI combines Gemma's structured trip understanding with flight arrival timing before recommending the cab.</p>
-                <div className="mini-code">Flight → ETA → Pickup window → Vehicle → Booking</div>
-              </div>
-            ) : booked ? (
-              <div className="booking-success">
-                <div className="success-icon">✓</div>
-                <div className="card-label">BOOKING CONFIRMED</div>
-                <h2>Your airport transfer is ready.</h2>
-                <p>{vehicle.type} • {plan.intent.passengers} passengers • {plan.intent.destination}</p>
-                <div className="booking-code">TM-DEMO-{plan.flight.flight_number.replace(/\W/g, "").slice(-4) || "RIDE"}</div>
-                <p className="booking-note">Pickup is timed for {plan.pickup_window.start}–{plan.pickup_window.end}, based on the tracked arrival.</p>
-                <button className="secondary-btn" onClick={() => setBooked(false)}>View ride details</button>
-              </div>
-            ) : (
-              <div className="result-content">
-                <div className="panel-heading result-heading">
-                  <div><span className="step">02</span><div><h2>AI + flight understanding</h2><p>Gemma extracts the request, then the flight feed sets the pickup timing.</p></div></div>
-                  <span className="live-dot">{plan.flight.mode === "live" ? "LIVE" : "DEMO FEED"}</span>
-                </div>
-                <div className="flight-card">
-                  <div className="flight-top"><div><span className="card-label">FLIGHT TRACKING</span><h2>✈ {plan.flight.flight_number}</h2><p>{plan.flight.route}</p></div><span className="status-badge">{plan.flight.status}</span></div>
-                  <div className="flight-stats">
-                    <div><span>EST. ARRIVAL</span><strong>{plan.flight.arrival_time}</strong></div>
-                    <div><span>ARRIVAL AIRPORT</span><strong>{plan.intent.pickup}</strong></div>
-                    <div><span>LAST UPDATE</span><strong>{plan.flight.updated_at}</strong></div>
-                  </div>
-                </div>
-                <div className="intent-grid">
-                  <div><span>PASSENGERS</span><strong>{plan.intent.passengers}</strong></div>
-                  <div><span>LARGE BAGS</span><strong>{plan.intent.large_bags}</strong></div>
-                  <div><span>SMALL BAGS</span><strong>{plan.intent.small_bags}</strong></div>
-                  <div className="wide"><span>DESTINATION</span><strong>{plan.intent.destination}</strong></div>
-                </div>
-                <div className="pickup-window">
-                  <div><span className="card-label">ARRIVAL-BASED PICKUP WINDOW</span><h2>{plan.pickup_window.start} – {plan.pickup_window.end}</h2><p>{plan.pickup_window.reason}</p></div>
-                  <div className="window-icon">⌁</div>
-                </div>
-                <div className="json-preview">
-                  <div className="json-header"><span>GEMMA MODEL OUTPUT</span><span>application/json</span></div>
-                  <pre>{JSON.stringify(plan.intent, null, 2)}</pre>
-                </div>
-                <div className="recommendation">
-                  <div className="recommendation-copy"><span className="step">03</span><div><span className="card-label">RECOMMENDED FOR YOU</span><h2>{vehicle.icon} {vehicle.type}</h2><p>{vehicle.capacity} • pickup after flight arrival</p></div></div>
-                  <strong className="fare">{vehicle.fare}</strong>
-                </div>
-                <button className="primary-btn booking-btn" onClick={() => setBooked(true)}>Confirm airport transfer <span>→</span></button>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="architecture">
-          <div className="section-label">WHY THE AI MATTERS</div>
-          <h2>Flight status changes the booking decision.</h2>
-          <div className="arch-flow">
-            <div className="arch-node"><span>01</span><b>Flight details</b><small>Traveller gives flight + trip</small></div><div className="arrow">→</div>
-            <div className="arch-node active"><span>02</span><b>Gemma 4</b><small>Extracts structured intent</small></div><div className="arrow">→</div>
-            <div className="arch-node"><span>03</span><b>Arrival tracking</b><small>Calculates pickup window</small></div><div className="arrow">→</div>
-            <div className="arch-node"><span>04</span><b>Cab booking</b><small>Matches vehicle + timing</small></div>
-          </div>
-        </section>
+        <section className="live-section" id="tracking"><div className="section-head"><div><h2>Live journey</h2><p>Arrival-aware travel assistance, not just a chatbot.</p></div><span className="live-chip">● {plan?"PLAN READY":"STANDBY"}</span></div><div className="live-cards"><article className="card"><span>FLIGHT</span><b>{plan?.flight?.flight_number||"Waiting for flight"}</b><small>{plan?.flight?.status||"Add a flight in the planner"}</small></article><article className="card"><span>PICKUP WINDOW</span><b>{plan?.pickup_window?plan.pickup_window.start+" – "+plan.pickup_window.end:"—"}</b><small>Based on estimated touchdown</small></article><article className="card"><span>AI SUPPORT</span><b>Ready 24/7</b><small>Natural-language travel planning</small></article></div></section>
       </main>
-      <footer><span>TravelMateAI</span><span>Built for React Hyderabad Hack Day 2026 • Open Source</span></footer>
     </div>
-  );
+  </div>;
 }
 createRoot(document.getElementById("root")).render(<App />);
