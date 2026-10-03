@@ -203,7 +203,7 @@ function App(){
             <div className="team-badge"><span>✦</span><div><small>TEAM</small><b>StormBreakers</b></div></div>
           </div>
           <div className="contributors-grid">
-            {["Mahaveer Varma","Mokshagna","Akshaya","Oliva"].map((name,index)=><article className="contributor-card" key={name}>
+            {["Mahaveer Varma","Mokshagna","Akshaya","Olive"].map((name,index)=><article className="contributor-card" key={name}>
               <div className="contributor-avatar">{name.split(" ").map(part=>part[0]).join("").slice(0,2).toUpperCase()}</div>
               <div><span>CONTRIBUTOR 0{index+1}</span><h3>{name}</h3><p>StormBreakers team member</p></div>
             </article>)}
