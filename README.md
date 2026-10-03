@@ -116,8 +116,7 @@ Suggested demo request:
 - [x] Passenger and luggage requirements are editable.
 - [x] Vehicle options are matched to capacity.
 - [x] End-to-end mock booking flow included.
-- [ ] Connect live transport providers before claiming live tracking in production.
-- [ ] Make repository public before submission if required by the challenge.
+
 
 
 ## License
