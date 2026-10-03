@@ -133,12 +133,30 @@ function demoBus(reference) {
   return { reference, status: "Running", next_bus: "10 min", frequency: "10–15 min", updated_at: "Demo feed · just now", mode: "demo", provider: "Demo Transit Adapter" };
 }
 
+function vehicleOptions(journey) {
+  const passengers = Number(journey.passengers || 1);
+  const large = Number(journey.large_bags || 0);
+  const small = Number(journey.small_bags || 0);
+  const bags = large + small;
+  return [
+    { type: "Bike", fare: 199, capacity: "1 passenger · 1 small bag", max_passengers: 1, max_large_bags: 0, max_small_bags: 1, icon: "🏍️" },
+    { type: "Auto", fare: 299, capacity: "3 passengers · 2 bags", max_passengers: 3, max_large_bags: 1, max_small_bags: 2, icon: "🛺" },
+    { type: "Sedan", fare: 549, capacity: "3 passengers · 3 bags", max_passengers: 3, max_large_bags: 1, max_small_bags: 3, icon: "🚘" },
+    { type: "SUV", fare: 749, capacity: "5 passengers · 5 bags", max_passengers: 5, max_large_bags: 3, max_small_bags: 5, icon: "🚙" },
+    { type: "XL Van", fare: 999, capacity: "7 passengers · 8 bags", max_passengers: 7, max_large_bags: 5, max_small_bags: 8, icon: "🚐" }
+  ].map(option => ({
+    ...option,
+    available: passengers <= option.max_passengers &&
+      large <= option.max_large_bags &&
+      small <= option.max_small_bags
+  }));
+}
+
 function vehicleFor(journey) {
-  const seats = Number(journey.passengers || 1);
-  const bags = Number(journey.large_bags || 0) + Number(journey.small_bags || 0);
-  if (seats <= 3 && bags <= 3) return { type: "Sedan", fare: 549, capacity: "3 passengers · 3 bags" };
-  if (seats <= 5 && bags <= 5) return { type: "SUV", fare: 749, capacity: "5 passengers · 5 bags" };
-  return { type: "XL Van", fare: 999, capacity: "7 passengers · 8 bags" };
+  const options = vehicleOptions(journey);
+  return options.find(option => option.available && option.type !== "Bike") ||
+    options.find(option => option.available) ||
+    options[options.length - 1];
 }
 
 function journeyPlan(journey, status) {
@@ -153,6 +171,7 @@ function journeyPlan(journey, status) {
     status,
     pickup_window: pickupWindow,
     vehicle: vehicleFor(journey),
+    vehicle_options: vehicleOptions(journey),
     recommendation: journey.mode === "metro" ? "Take the metro to the nearest practical interchange, then use the matched local ride." : "Use the matched vehicle after the arrival window."
   };
 }
