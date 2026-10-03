@@ -8,11 +8,14 @@ const examples=[
 ];
 
 function vehicleFor(intent){
-  const seats=Number(intent.passengers||1), bags=Number(intent.large_bags||0)+Number(intent.small_bags||0);
-  if(seats<=3&&bags<=3)return{type:"Sedan",icon:"🚘",fare:"₹549",capacity:"3 passengers · 3 bags"};
-  if(seats<=5&&bags<=5)return{type:"SUV",icon:"🚙",fare:"₹749",capacity:"5 passengers · 5 bags"};
-  return{type:"XL Van",icon:"🚐",fare:"₹999",capacity:"7 passengers · 8 bags"};
+  const seats=Number(intent?.passengers||1), large=Number(intent?.large_bags||0), small=Number(intent?.small_bags||0), bags=large+small;
+  if(seats<=1&&large===0&&small<=1)return{type:"Bike",icon:"🏍️",fare:199,capacity:"1 passenger · 1 small bag"};
+  if(seats<=3&&large<=1&&small<=2)return{type:"Auto",icon:"🛺",fare:299,capacity:"3 passengers · 2 bags"};
+  if(seats<=3&&large<=1&&small<=3)return{type:"Sedan",icon:"🚘",fare:549,capacity:"3 passengers · 3 bags"};
+  if(seats<=5&&large<=3&&small<=5)return{type:"SUV",icon:"🚙",fare:749,capacity:"5 passengers · 5 bags"};
+  return{type:"XL Van",icon:"🚐",fare:999,capacity:"7 passengers · 8 bags"};
 }
+function vehicleIcon(type){return ({Bike:"🏍️",Auto:"🛺",Sedan:"🚘",SUV:"🚙","XL Van":"🚐"}[type]||"🚘");}
 
 function App(){
   const [message,setMessage]=useState("");
@@ -27,7 +30,22 @@ function App(){
   const [supportQuestion,setSupportQuestion]=useState("");
   const [supportAnswer,setSupportAnswer]=useState("");
   const [started,setStarted]=useState(false);
-  const vehicle=useMemo(()=>plan?vehicleFor(plan.journey||plan.intent):null,[plan]);
+  const vehicle=useMemo(()=>plan?.selectedVehicle||vehicleFor(plan?.journey||plan?.intent),[plan]);
+  function updateJourneyField(field,value){
+    setPlan(prev=>{
+      if(!prev?.journey)return prev;
+      const journey={...prev.journey,[field]:Math.max(0,Number(value)||0)};
+      if(field==="passengers")journey.passengers=Math.max(1,Math.min(12,Number(value)||1));
+      if(field==="large_bags"||field==="small_bags")journey[field]=Math.min(20,Math.max(0,Number(value)||0));
+      const options=prev.vehicle_options||[];
+      const next=options.find(o=>o.type===prev.selectedVehicle?.type && o.available);
+      return {...prev,journey,vehicle_options:options.map(o=>({...o,available:journey.passengers<=o.max_passengers&&journey.large_bags<=o.max_large_bags&&journey.small_bags<=o.max_small_bags})),selectedVehicle:next||undefined};
+    });
+  }
+  function selectVehicle(option){
+    if(!option.available)return;
+    setPlan(prev=>({...prev,selectedVehicle:{type:option.type,icon:option.icon||vehicleIcon(option.type),fare:option.fare,capacity:option.capacity}}));
+  }
 
   async function planRide(){
     if(!message.trim())return;
@@ -83,7 +101,7 @@ function App(){
     const data=await r.json(); alert(data.alert?.message||"Emergency request recorded.");
   }
   async function confirmBooking(){
-    const r=await fetch("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:plan.journey.mode,reference:plan.journey.reference,destination:plan.journey.destination,vehicle:vehicle.type,fare:vehicle.fare,pickup_window:plan.pickup_window})});
+    const r=await fetch("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:plan.journey.mode,reference:plan.journey.reference,destination:plan.journey.destination,vehicle:vehicle.type,fare:vehicle.fare,pickup_window:plan.pickup_window,passengers:j.passengers,large_bags:j.large_bags,small_bags:j.small_bags})});
     if(r.ok){
       const data=await r.json();
       setBooked(true);
@@ -156,7 +174,13 @@ function App(){
         </section>
         <section className="planner-section" id="planner"><div className="section-head"><div><h2>AI journey planner</h2><p>Flights, trains, metro and buses use the same Gemma-powered backend.</p></div><span className="gemma-tag">✦ GEMMA 4</span></div>
           <div className="planner-grid"><div className="planner-input card"><label>YOUR TRAVEL REQUEST</label><textarea value={message} onChange={e=>setMessage(e.target.value)} placeholder="Try: Track train 12723 arriving at Secunderabad. We are 3 people going to Banjara Hills." rows="6"/><div className="examples">{examples.map((x,i)=><button key={i} onClick={()=>setMessage(x)}>Flight example {i+1}</button>)}<button onClick={()=>setMessage("Track train 12723 arriving at Secunderabad today. We are 3 people with 2 bags going to Banjara Hills.")}>Train example</button><button onClick={()=>setMessage("Take the Hyderabad metro from Ameerpet to Hitech City for 2 passengers.")}>Metro example</button></div><button className="plan-btn" disabled={loading||!message.trim()} onClick={planRide}>{loading?"Understanding journey…":"Plan my journey →"}</button>{error&&<div className="error-box">{error}</div>}</div>
-            <div className="plan-result card">{!plan&&!booked?<div className="empty"><div>✈</div><h3>Your journey plan will appear here</h3><p>Gemma → mode → arrival/service timing → pickup → vehicle</p></div>:booked?<div className="confirmed"><div>✓</div><label>BOOKING CONFIRMED</label><h2>Journey transfer ready</h2><p>{vehicle.type} · {j?.destination}</p><b>TM-DEMO-{String(j?.reference||"RIDE").replace(/\W/g,"").slice(-4)}</b><button onClick={()=>setBooked(false)}>View ride details</button></div>:<div className="result"><div className="result-top"><div><label>{j?.mode?.toUpperCase()} TRACKING</label><h2>✦ {j?.reference}</h2><small>{plan.status.status} · {plan.status.arrival_time||plan.status.next_train||plan.status.next_bus||"service active"}</small></div><span>DEMO ADAPTER</span></div><div className="stat-row"><div><small>PASSENGERS</small><b>{j?.passengers}</b></div><div><small>BAGS</small><b>{Number(j?.large_bags)+Number(j?.small_bags)}</b></div><div><small>PICKUP</small><b>{plan.pickup_window.start}–{plan.pickup_window.end}</b></div></div><div className="route-row"><span>{j?.pickup}</span><b>→</b><span>{j?.destination}</span></div><div className="vehicle-row"><div><label>AI VEHICLE MATCH</label><h2>{vehicle.icon} {vehicle.type}</h2><small>{vehicle.capacity} · {plan.recommendation}</small></div><strong>₹{vehicle.fare}</strong></div><button className="plan-btn" disabled={booked} onClick={confirmBooking}>{booked?"Transfer confirmed ✓":"Confirm transfer →"}</button></div>}</div>
+            <div className="plan-result card">{!plan&&!booked?<div className="empty"><div>✈</div><h3>Your journey plan will appear here</h3><p>Gemma → mode → arrival/service timing → pickup → vehicle</p></div>:booked?<div className="confirmed"><div>✓</div><label>BOOKING CONFIRMED</label><h2>Journey transfer ready</h2><p>{vehicle.type} · {j?.destination}</p><b>TM-DEMO-{String(j?.reference||"RIDE").replace(/\W/g,"").slice(-4)}</b><button onClick={()=>setBooked(false)}>View ride details</button></div>:<div className="result"><div className="result-top"><div><label>{j?.mode?.toUpperCase()} TRACKING</label><h2>✦ {j?.reference}</h2><small>{plan.status.status} · {plan.status.arrival_time||plan.status.next_train||plan.status.next_bus||"service active"}</small></div><span>DEMO ADAPTER</span></div><div className="editable-stats">
+              <div className="edit-stat"><label>PASSENGERS</label><div className="stepper"><button onClick={()=>updateJourneyField("passengers",Math.max(1,Number(j.passengers)-1))}>−</button><b>{j.passengers}</b><button onClick={()=>updateJourneyField("passengers",Math.min(12,Number(j.passengers)+1))}>+</button></div></div>
+              <div className="edit-stat"><label>LARGE BAGS</label><div className="stepper"><button onClick={()=>updateJourneyField("large_bags",Math.max(0,Number(j.large_bags)-1))}>−</button><b>{j.large_bags}</b><button onClick={()=>updateJourneyField("large_bags",Math.min(20,Number(j.large_bags)+1))}>+</button></div></div>
+              <div className="edit-stat"><label>CABIN BAGS</label><div className="stepper"><button onClick={()=>updateJourneyField("small_bags",Math.max(0,Number(j.small_bags)-1))}>−</button><b>{j.small_bags}</b><button onClick={()=>updateJourneyField("small_bags",Math.min(20,Number(j.small_bags)+1))}>+</button></div></div>
+              <div className="edit-stat pickup-stat"><label>PICKUP</label><b>{plan.pickup_window.start}–{plan.pickup_window.end}</b></div>
+            </div>
+            <div className="vehicle-options"><div className="options-title"><label>CHOOSE YOUR RIDE</label><small>Options update with passengers and bags</small></div><div className="vehicle-option-grid">{(plan.vehicle_options||[vehicle]).map(option=><button key={option.type} disabled={!option.available} className={"vehicle-option "+(vehicle.type===option.type?"selected":"")+(option.available?"":" unavailable")} onClick={()=>selectVehicle(option)}><span className="vehicle-option-icon">{option.icon||vehicleIcon(option.type)}</span><span><b>{option.type}</b><small>{option.capacity}</small></span><strong>₹{option.fare}</strong></button>)}</div></div><div className="route-row"><span>{j?.pickup}</span><b>→</b><span>{j?.destination}</span></div><div className="vehicle-row"><div><label>SELECTED RIDE</label><h2>{vehicle.icon} {vehicle.type}</h2><small>{vehicle.capacity} · {plan.recommendation}</small></div><strong>₹{vehicle.fare}</strong></div><button className="plan-btn" disabled={booked} onClick={confirmBooking}>{booked?"Transfer confirmed ✓":"Confirm transfer →"}</button></div>}</div>
           </div>
         </section>
         <section className="services-section" id="services"><div className="section-head"><div><h2>Travel services</h2><p>Backend-powered features beyond transport tracking.</p></div><div className="service-tabs">{["hotels","food","transport","documents","notifications"].map(x=><button key={x} onClick={()=>loadService(x)} className={service.type===x?"selected":""}>{x}</button>)}</div></div>
