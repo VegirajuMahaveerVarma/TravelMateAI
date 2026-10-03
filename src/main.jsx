@@ -21,7 +21,8 @@ function App(){
   const [booked,setBooked]=useState(false);
   const [error,setError]=useState("");
   const [service,setService]=useState({type:"hotels",data:null,loading:false});
-  const [support,setSupport]=useState("");
+  const [supportQuestion,setSupportQuestion]=useState("");
+  const [supportAnswer,setSupportAnswer]=useState("");
   const [started,setStarted]=useState(false);
   const vehicle=useMemo(()=>plan?vehicleFor(plan.journey||plan.intent):null,[plan]);
 
@@ -38,14 +39,17 @@ function App(){
   async function loadService(type){
     setService({type,data:null,loading:true});
     try{
-      const urls={hotels:"/api/hotels?city=Hyderabad",food:"/api/food?preference=popular",transport:"/api/transport/options?from=Hyderabad%20Airport&to=Banjara%20Hills",documents:"/api/documents",notifications:"/api/notifications"};
+      const city=encodeURIComponent(plan?.journey?.destination||"Hyderabad");
+      const from=encodeURIComponent(plan?.journey?.pickup||"Hyderabad Airport");
+      const to=encodeURIComponent(plan?.journey?.destination||"Banjara Hills");
+      const urls={hotels:"/api/hotels?city="+city,food:"/api/food?preference=popular",transport:"/api/transport/options?from="+from+"&to="+to,documents:"/api/documents",notifications:"/api/notifications"};
       const r=await fetch(urls[type]); const data=await r.json(); setService({type,data,loading:false}); jump("services");
     }catch(e){setService({type,data:{error:e.message},loading:false});}
   }
   async function askSupport(){
-    const question=support.trim(); if(!question)return;
+    const question=supportQuestion.trim(); if(!question)return;
     const r=await fetch("/api/support",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:question})});
-    const data=await r.json(); setSupport(data.answer||data.error);
+    const data=await r.json(); setSupportAnswer(data.answer||data.error||"Support is unavailable.");
   }
   async function emergency(){
     const r=await fetch("/api/emergency",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"Travel emergency",location:"Current journey"})});
@@ -116,7 +120,7 @@ function App(){
         <section className="services-section" id="services"><div className="section-head"><div><h2>Travel services</h2><p>Backend-powered features beyond transport tracking.</p></div><div className="service-tabs">{["hotels","food","transport","documents","notifications"].map(x=><button key={x} onClick={()=>loadService(x)} className={service.type===x?"selected":""}>{x}</button>)}</div></div>
           <div className="service-result card">{service.loading?<div className="empty"><div>◌</div><h3>Loading {service.type}…</h3></div>:service.data?.hotels?<div className="service-list">{service.data.hotels.map(x=><article key={x.id}><b>{x.name}</b><span>{x.area} · ★ {x.rating}</span><strong>₹{x.price}/night</strong><small>{x.amenities.join(" · ")}</small></article>)}</div>:service.data?.options?<div className="service-list">{service.data.options.map(x=><article key={x.id||x.type}><b>{x.type||x.name}</b><span>{x.best_for||x.type}</span><strong>{x.price?"₹"+x.price:x.eta}</strong><small>{x.eta||x.frequency}</small></article>)}</div>:service.data?.documents?<div className="service-list">{service.data.documents.map(x=><article key={x.id}><b>{x.name}</b><span>{x.id}</span><strong>{x.status}</strong><small>Stored in your travel workspace</small></article>)}</div>:service.data?.notifications?<div className="service-list">{service.data.notifications.map(x=><article key={x.id}><b>{x.title}</b><span>{x.unread?"Unread":"Read"}</span><small>{x.body}</small></article>)}</div>:<div className="empty"><div>✦</div><h3>Select a travel service</h3><p>Hotels, food, transport, documents and notifications are connected to the backend.</p></div>}</div>
         </section>
-        <section className="support-section" id="support"><div className="section-head"><div><h2>AI Support</h2><p>Ask about your journey, pickup, hotels, food or documents.</p></div><span className="gemma-tag">GEMMA 4</span></div><div className="support-grid"><div className="support-input card"><textarea value={support} onChange={e=>setSupport(e.target.value)} placeholder="Ask: What should I do if my train is delayed?" rows="3"/><button className="plan-btn" onClick={askSupport}>Ask TravelMate AI →</button></div><div className="support-answer card"><label>ASSISTANT</label><p>{support||"Your AI support response will appear here."}</p></div></div></section>
+        <section className="support-section" id="support"><div className="section-head"><div><h2>AI Support</h2><p>Ask about your journey, pickup, hotels, food or documents.</p></div><span className="gemma-tag">GEMMA 4</span></div><div className="support-grid"><div className="support-input card"><textarea value={supportQuestion} onChange={e=>setSupportQuestion(e.target.value)} placeholder="Ask: What should I do if my train is delayed?" rows="3"/><button className="plan-btn" onClick={askSupport}>Ask TravelMate AI →</button></div><div className="support-answer card"><label>ASSISTANT</label><p>{supportAnswer||"Your AI support response will appear here."}</p></div></div></section>
         <section className="live-section" id="tracking"><div className="section-head"><div><h2>Live journey</h2><p>Arrival-aware assistance for flights, trains and local transit.</p></div><span className="live-chip">● {plan?"PLAN READY":"STANDBY"}</span></div><div className="live-cards"><article className="card"><span>JOURNEY</span><b>{j?.reference||"Waiting for journey"}</b><small>{j?.mode||"Choose flight, train, metro or bus"}</small></article><article className="card"><span>PICKUP WINDOW</span><b>{plan?.pickup_window?plan.pickup_window.start+" – "+plan.pickup_window.end:"—"}</b><small>Based on arrival/service timing</small></article><article className="card"><span>AI SUPPORT</span><b>Ready</b><small>Natural-language travel planning</small></article></div></section>
       </main>
     </div>
