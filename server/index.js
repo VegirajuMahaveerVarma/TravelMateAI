@@ -58,26 +58,51 @@ function fallbackJourney(text) {
   return { mode, reference: ref, origin, pickup, destination, passengers, large_bags: large, small_bags: small, travel_date: "today", preference: "comfortable" };
 }
 
+function normalizeJourney(journey, originalText) {
+  const fallback = fallbackJourney(originalText);
+  const result = { ...fallback, ...(journey || {}) };
+  result.mode = ["flight", "train", "metro", "bus"].includes(result.mode) ? result.mode : fallback.mode;
+  result.reference = String(result.reference || fallback.reference).trim();
+  result.origin = String(result.origin || fallback.origin).trim();
+  result.pickup = String(result.pickup || fallback.pickup).trim();
+  result.destination = String(result.destination || fallback.destination).trim();
+  result.passengers = Math.max(1, Math.min(12, Number(result.passengers) || fallback.passengers));
+  result.large_bags = Math.max(0, Math.min(20, Number(result.large_bags) || 0));
+  result.small_bags = Math.max(0, Math.min(20, Number(result.small_bags) || 0));
+  result.travel_date = String(result.travel_date || fallback.travel_date).trim();
+  result.preference = String(result.preference || fallback.preference).trim();
+  if (result.mode === "flight" && /\b(?:hyderabad|hyd)\b/i.test(originalText)) result.pickup = "Hyderabad Airport (HYD)";
+  return result;
+}
+
 async function extractJourney(message) {
-  if (!process.env.GEMINI_API_KEY) return fallbackJourney(message);
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const interaction = await ai.interactions.create({
-    model,
-    input: [
-      "You are TravelMateAI's universal journey intent engine.",
-      "Extract a user's transport journey into structured JSON.",
-      "Supported modes: flight, train, metro, bus.",
-      "Identify reference number/name, origin, pickup/arrival station or airport, destination, passenger and luggage needs.",
-      "Do not invent specific transport facts. Use sensible generic labels when the user omitted a field.",
-      "If the user says Hyderabad or HYD for a flight, normalize pickup to Hyderabad Airport (HYD).",
-      "Return only JSON matching the schema.",
-      "",
-      "User request:",
-      message
-    ].join("\n"),
-    response_format: { type: "text", mime_type: "application/json", schema: journeySchema }
-  });
-  return JSON.parse(interaction.output_text);
+  const fallback = fallbackJourney(message);
+  if (!process.env.GEMINI_API_KEY) return fallback;
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const interaction = await ai.interactions.create({
+      model,
+      input: [
+        "You are TravelMateAI's universal journey intent engine.",
+        "Extract the user's complete travel request into structured JSON.",
+        "Supported modes: flight, train, metro, bus.",
+        "Preserve explicit names/numbers. Never invent a real-time status, schedule, fare, hotel, or route.",
+        "Infer passengers only when clearly stated; 'my parents' means 3 people including the user.",
+        "Count large/checked and cabin/carry-on bags separately when stated.",
+        "Use generic labels such as 'Arrival Airport' or 'Arrival Railway Station' when a location is omitted.",
+        "If the user says Hyderabad or HYD for a flight, normalize pickup to Hyderabad Airport (HYD).",
+        "Return only JSON matching the schema.",
+        "",
+        "User request:",
+        message
+      ].join("\n"),
+      response_format: { type: "text", mime_type: "application/json", schema: journeySchema }
+    });
+    return normalizeJourney(JSON.parse(interaction.output_text), message);
+  } catch (error) {
+    console.error("Gemma extraction failed; using deterministic fallback:", error.message);
+    return fallback;
+  }
 }
 
 function addMinutes(hhmm, minutes) {
@@ -136,17 +161,18 @@ app.get("/api/health", (_req, res) => res.json({ ok: true, service: "TravelMateA
 
 app.post("/api/journey/plan", async (req, res) => {
   const message = String(req.body?.message || "").trim();
-  if (!message) return res.status(400).json({ error: "Describe your journey first." });
+  if (message.length < 8) return res.status(400).json({ error: "Describe your journey with a little more detail." });
+  if (message.length > 2000) return res.status(400).json({ error: "Please keep the journey description under 2000 characters." });
   try {
     const journey = await extractJourney(message);
     const status = journey.mode === "flight" ? demoFlight(journey.reference)
       : journey.mode === "train" ? demoTrain(journey.reference)
       : journey.mode === "metro" ? demoMetro(journey.reference)
       : demoBus(journey.reference);
-    res.json(journeyPlan(journey, status));
+    res.json({ ...journeyPlan(journey, status), ai: { provider: process.env.GEMINI_API_KEY ? "Gemma 4" : "deterministic fallback", model } });
   } catch (error) {
     console.error(error);
-    res.status(502).json({ error: "The AI journey planner could not process this request." });
+    res.status(500).json({ error: "The journey planner could not process this request." });
   }
 });
 
@@ -197,7 +223,11 @@ app.get("/api/transport/options", (req, res) => {
 });
 
 app.post("/api/bookings", (req, res) => {
-  const booking = { id: "TM-" + String(Date.now()).slice(-6), created_at: new Date().toISOString(), ...req.body, status: "confirmed" };
+  const body = req.body || {};
+  if (!body.mode || !body.reference || !body.destination || !body.vehicle || !body.pickup_window) {
+    return res.status(400).json({ error: "Complete the journey plan before confirming a transfer." });
+  }
+  const booking = { id: "TM-" + String(Date.now()).slice(-6), created_at: new Date().toISOString(), ...body, status: "confirmed" };
   stores.bookings.push(booking);
   stores.notifications.unshift({ id: "N-" + Date.now(), title: "Ride booked", body: booking.id + " is confirmed.", unread: true });
   res.status(201).json({ booking });
@@ -205,6 +235,7 @@ app.post("/api/bookings", (req, res) => {
 
 app.post("/api/support", async (req, res) => {
   const message = String(req.body?.message || "").trim();
+  if (message.length > 1000) return res.status(400).json({ error: "Please keep your support question under 1000 characters." });
   if (!message) return res.status(400).json({ error: "Ask the AI support team a question." });
   if (!process.env.GEMINI_API_KEY) return res.json({ answer: "TravelMateAI support can help with your journey, transport, pickup timing, hotels, food and documents. Add a Gemini API key for live AI support.", mode: "demo" });
   try {
