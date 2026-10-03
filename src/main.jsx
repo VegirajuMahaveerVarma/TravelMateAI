@@ -193,6 +193,22 @@ function App(){
         </section>
         <section className="support-section" id="support"><div className="section-head"><div><h2>AI Support</h2><p>Ask about your journey, pickup, hotels, food or documents.</p></div><span className="gemma-tag">GEMMA 4</span></div><div className="support-grid"><div className="support-input card"><textarea value={supportQuestion} onChange={e=>setSupportQuestion(e.target.value)} placeholder="Ask: What should I do if my train is delayed?" rows="3"/><button className="plan-btn" onClick={askSupport}>Ask TravelMate AI →</button></div><div className="support-answer card"><label>ASSISTANT</label><p>{supportAnswer||"Your AI support response will appear here."}</p></div></div></section>
         <section className="live-section" id="tracking"><div className="section-head"><div><h2>Live journey</h2><p>Arrival-aware assistance for flights, trains and local transit.</p></div><span className="live-chip">● {plan?"PLAN READY":"STANDBY"}</span></div><div className="live-cards"><article className="card"><span>JOURNEY</span><b>{j?.reference||"Waiting for journey"}</b><small>{j?.mode||"Choose flight, train, metro or bus"}</small></article><article className="card"><span>PICKUP WINDOW</span><b>{plan?.pickup_window?plan.pickup_window.start+" – "+plan.pickup_window.end:"—"}</b><small>Based on arrival/service timing</small></article><article className="card"><span>AI SUPPORT</span><b>Ready</b><small>Natural-language travel planning</small></article></div></section>
+        <section className="contributors-section" id="contributors">
+          <div className="contributors-header">
+            <div>
+              <span className="contributors-eyebrow">THE TEAM BEHIND TRAVELMATEAI</span>
+              <h2>Meet <em>StormBreakers.</em></h2>
+              <p>Built together for Hack Day — turning one natural-language travel prompt into a connected journey.</p>
+            </div>
+            <div className="team-badge"><span>✦</span><div><small>TEAM</small><b>StormBreakers</b></div></div>
+          </div>
+          <div className="contributors-grid">
+            {["Mahaveer Varma","Mokshagna","Akshaya","Oliva"].map((name,index)=><article className="contributor-card" key={name}>
+              <div className="contributor-avatar">{name.split(" ").map(part=>part[0]).join("").slice(0,2).toUpperCase()}</div>
+              <div><span>CONTRIBUTOR 0{index+1}</span><h3>{name}</h3><p>StormBreakers team member</p></div>
+            </article>)}
+          </div>
+        </section>
       </main>
     </div>
   </div>;
