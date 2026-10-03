@@ -18,7 +18,8 @@ function vehicleFor(intent){
 function vehicleIcon(type){return ({Bike:"🏍️",Auto:"🛺",Sedan:"🚘",SUV:"🚙","XL Van":"🚐"}[type]||"🚘");}
 function displayDate(value){
   if(!value)return "Today";
-  return String(value).replace(/\b(next|this)\s+([a-z])/i,(_,prefix,letter)=>prefix+" "+letter.toUpperCase()+String(value).slice(String(value).toLowerCase().indexOf(letter)+1));
+  const text=String(value).trim();
+  return text ? text.charAt(0).toUpperCase()+text.slice(1) : "Today";
 }
 
 function App(){
