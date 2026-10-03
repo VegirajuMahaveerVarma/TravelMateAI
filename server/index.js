@@ -66,6 +66,14 @@ function normalizeJourney(journey, originalText) {
   result.origin = String(result.origin || fallback.origin).trim();
   result.pickup = String(result.pickup || fallback.pickup).trim();
   result.destination = String(result.destination || fallback.destination).trim();
+
+  // If the user explicitly supplied a route/date, prefer the deterministic
+  // extraction so the dashboard never displays an AI-expanded sentence or
+  // loses a relative date such as "next Friday".
+  if (fallback.origin !== "Hyderabad" || /\bfrom\s+/i.test(originalText)) result.origin = fallback.origin;
+  if (fallback.destination !== "Your destination" || /\b(?:to|going to|heading to|destination is|drop\s+(?:me|us)?\s*at)\s+/i.test(originalText)) result.destination = fallback.destination;
+  if (fallback.travel_date !== "today" || /\b(?:today|tomorrow|tonight|next|this)\s+/i.test(originalText)) result.travel_date = fallback.travel_date;
+
   result.passengers = Math.max(1, Math.min(12, Number(result.passengers) || fallback.passengers));
   result.large_bags = Math.max(0, Math.min(20, Number(result.large_bags) || 0));
   result.small_bags = Math.max(0, Math.min(20, Number(result.small_bags) || 0));
