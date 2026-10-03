@@ -1,104 +1,127 @@
 # TravelMateAI ✦
 
-**Track the flight. Time the ride.**
+**Your AI companion from touchdown to destination.**
 
-TravelMateAI is an open-source airport transfer assistant for React Hyderabad Hack Day 2026. A traveller gives a flight and trip request in natural language; **Gemma 4** extracts structured intent, a flight-tracking adapter supplies arrival timing, and the application turns that arrival into a pickup window and cab recommendation.
+TravelMateAI is an open-source AI-first journey planner for React Hyderabad Hack Day 2026. A traveller describes an entire trip in natural language; **Gemma 4** extracts structured travel intent, and the application turns that intent into a connected journey workspace for flights, trains, metro, buses, pickup/drop planning, vehicle selection and mock booking.
 
 ## Core workflow
 
-~~~text
-Flight + traveller request
-          ↓
-       Gemma 4
-          ↓
-Structured trip intent (JSON)
-          ↓
-Flight arrival status
-          ↓
-Arrival-based pickup window
-          ↓
-Vehicle recommendation
-          ↓
-Mock cab booking
-~~~
+```text
+Natural-language travel request
+              ↓
+           Gemma 4
+              ↓
+     Structured journey JSON
+              ↓
+   Route + date + traveller needs
+              ↓
+ ┌──────────┬──────────┬───────────┐
+ │ Transport│  Pickup  │  Services │
+ └──────────┴──────────┴───────────┘
+              ↓
+   Vehicle options + editable
+   passengers/luggage
+              ↓
+        Mock booking
+```
 
-## Important demo note
+## What the AI actually does
 
-The current local demo uses a clearly labelled **demo flight feed** so the complete workflow works with only the Gemini API key. The backend isolates the tracking adapter in the demoFlightStatus function.
+Gemma 4 is part of the core application workflow, not a decorative chatbot. It extracts:
 
-For production, replace that adapter with a real flight-data provider such as FlightAware AeroAPI and map its estimated/actual arrival fields into the same response shape.
+- transport mode: flight, train, metro or bus
+- reference number/name
+- pickup/origin
+- destination/drop
+- relative travel date
+- passenger count
+- large/checked luggage
+- cabin/small luggage
+- travel preference
 
-No live flight status is claimed by the demo feed.
+The backend validates and normalizes the structured result before using it to build the journey plan.
+
+If the model is unavailable or returns invalid output, a deterministic fallback keeps the demo usable.
+
+## Demo data note
+
+The current hackathon demo uses clearly labelled **demo transport adapters** for flight, train, metro and bus timing. These are not claimed to be live real-world status feeds.
+
+Hotels, food, transport options and vehicle prices are also mock data. The adapter structure is intentionally separated so real providers can be connected later without changing the core journey workflow.
 
 ## Tech stack
 
-- React + Vite
+- React 19 + Vite
 - Node.js + Express
 - Google GenAI SDK
 - **Gemma 4 26B MoE IT** (gemma-4-26b-a4b-it)
 - Structured JSON output
-- Flight tracking adapter
-- Arrival-based pickup calculation
-- Mock vehicle recommendation + booking
+- Journey intent extraction and validation
+- Editable passenger/luggage requirements
+- Vehicle option matching
+- Mock booking workflow
 - MIT License
 
 ## Run locally
 
 Requirements: Node.js 20+ and a Google AI Studio/Gemini API key with access to Gemma 4.
 
-~~~bash
+```bash
 git clone https://github.com/VegirajuMahaveerVarma/StormBreakers.git
 cd StormBreakers
 npm install
 cp .env.example .env
-~~~
+```
 
 Add your key to .env:
 
-~~~env
+```env
 GEMINI_API_KEY=your_key_here
 GEMMA_MODEL=gemma-4-26b-a4b-it
 PORT=8787
-~~~
+```
 
 Then run:
 
-~~~bash
+```bash
 npm run dev
-~~~
+```
 
 Open http://localhost:5173.
 
-## Demo script
+## Demo flow
 
-1. Enter a flight, arrival airport, passenger/luggage details and destination in natural language.
-2. Click **Track flight & plan my ride**.
-3. Show Gemma's structured JSON.
-4. Show the tracked flight card and estimated arrival.
-5. Show the calculated pickup window after touchdown.
-6. Show how passenger + luggage intent determines the vehicle.
-7. Confirm the mock airport transfer.
-8. Point to the architecture section and this README.
+1. Enter a natural-language journey.
+2. Let Gemma 4 extract the route, date, passengers and luggage.
+3. Show the dashboard with clean pickup/drop and travel date.
+4. Edit passengers or luggage if needed.
+5. Compare Bike, Auto, Sedan, SUV and XL Van options.
+6. Select a suitable ride.
+7. Confirm the mock transfer.
+8. Open My Trips and Notifications to show the connected workflow.
 
 Suggested demo request:
 
-> Track flight AI 1234 arriving at Hyderabad today. We are 3 people with 3 large suitcases and 2 cabin bags going to Banjara Hills.
+> I'm travelling from Hyderabad to Dubai next Friday. My flight is AI 542 and I'm travelling with my parents. We have 3 large suitcases and 2 cabin bags. We need an airport pickup.
 
 ## Submission checklist
 
 - [x] AI is central to the workflow.
 - [x] Open-source project license included.
-- [x] Gemma 4 is explicitly identified.
+- [x] Gemma 4 explicitly identified.
 - [x] Structured model output is consumed by application logic.
-- [x] Flight-to-arrival-to-cab workflow is demonstrated.
-- [x] Arrival-based pickup window is calculated.
+- [x] Natural-language journey planning demonstrated.
+- [x] Flight/train/metro/bus journey paths supported.
+- [x] Pickup/drop and travel date are normalized.
+- [x] Passenger and luggage requirements are editable.
+- [x] Vehicle options are matched to capacity.
 - [x] End-to-end mock booking flow included.
-- [ ] Connect a live flight provider before claiming live tracking in production.
+- [ ] Connect live transport providers before claiming live tracking in production.
 - [ ] Make repository public before submission if required by the challenge.
-- [ ] Add the final demo URL and screenshots before submission.
+- [ ] Add final demo URL and screenshots before submission.
 
 ## License
 
 MIT. See LICENSE.
 
-Vehicle prices and booking confirmation are intentionally mocked for the hackathon demo. No real cab provider, payment, or passenger service is connected.
+Vehicle prices, transport timing and booking confirmation are intentionally mocked for the hackathon demo. No real cab provider, payment system or passenger service is connected.
