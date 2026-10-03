@@ -118,7 +118,7 @@ Suggested demo request:
 - [x] End-to-end mock booking flow included.
 - [ ] Connect live transport providers before claiming live tracking in production.
 - [ ] Make repository public before submission if required by the challenge.
-- [ ] Add final demo URL and screenshots before submission.
+
 
 ## License
 
