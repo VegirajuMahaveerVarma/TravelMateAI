@@ -49,13 +49,13 @@ function fallbackJourney(text) {
   const passengers = Number(text.match(/\b(\d+)\s*(?:passengers?|people|travellers?|travelers?)\b/i)?.[1]) || (lower.includes("parents") ? 3 : 2);
   const large = Number(text.match(/\b(\d+)\s*(?:large|big|checked)(?:\s+(?:suitcases?|bags?))?/i)?.[1]) || 0;
   const small = Number(text.match(/\b(\d+)\s*(?:cabin|small|carry[- ]?on)(?:\s+(?:bags?|suitcases?|luggage))?/i)?.[1]) || 0;
-  const destination = text.match(/(?:to|going to|heading to|destination is|drop(?:\s+me|\s+us)?\s+at)\s+([^.,]+)/i)?.[1]?.trim() || "Your destination";
-  const origin = text.match(/(?:from|leaving)\s+([^.,]+)/i)?.[1]?.trim() || "Hyderabad";
-  const pickup = mode === "flight" ? (lower.includes("hyd") || lower.includes("hyderabad") ? "Hyderabad Airport (HYD)" : "Arrival Airport")
-    : mode === "train" ? "Arrival Railway Station"
-    : mode === "metro" ? "Nearest Metro Station"
-    : "Bus stop";
-  return { mode, reference: ref, origin, pickup, destination, passengers, large_bags: large, small_bags: small, travel_date: "today", preference: "comfortable" };
+  const route = text.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?=\s+(?:for|with|on|next|tomorrow|today|tonight|this)\b|[.!?,]|$)/i);
+  let origin = route?.[1]?.trim() || text.match(/\b(?:from|leaving)\s+(.+?)(?=\s+to\s+|\s+(?:for|with|on|next|tomorrow|today)\b|[.!?,]|$)/i)?.[1]?.trim() || "Hyderabad";
+  let destination = route?.[2]?.trim() || text.match(/\b(?:to|going to|heading to|destination is|drop(?:\s+me|\s+us)?\s+at)\s+(.+?)(?=\s+(?:for|with|on|next|tomorrow|today|tonight|this)\b|[.!?,]|$)/i)?.[1]?.trim() || "Your destination";
+  const dateMatch = text.match(/\b(next\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|this\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|tomorrow|today|tonight)\b/i);
+  const travel_date = dateMatch?.[1] || "today";
+  const pickup = origin !== "Hyderabad" ? origin : mode === "flight" ? "Hyderabad Airport (HYD)" : mode === "train" ? "Arrival Railway Station" : mode === "metro" ? "Nearest Metro Station" : "Bus stop";
+  return { mode, reference: ref, origin, pickup, destination, passengers, large_bags: large, small_bags: small, travel_date, preference: "comfortable" };
 }
 
 function normalizeJourney(journey, originalText) {
